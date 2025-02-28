@@ -1,0 +1,184 @@
+import pygame
+import os
+import random
+
+WIDTH,HEIGHT = 900,900
+WIN = pygame.display.set_mode((WIDTH,HEIGHT))
+WHITE = (255,255,255)
+BLACK = (0,0,0)
+RED = (255,0,0)
+YELLOW = (255,255,0)
+FPS = 60 #frames per second
+VEL = 5
+BUL_VEL = 7
+ANDROID_FREQUENCY = 500
+UP_DIFFICULTY_FREQUENCY = 5000
+MAX_NUM_BULLETS = 10
+
+SPACESHIP_WIDTH, SPACESHIP_HEIGHT = 100,100
+
+pygame.display.set_caption("Shoot the blocks")
+
+
+#SpaceShips need to be rectangles and not only surfaces. Otherwise, collision detections cannot happen
+class SpaceShip():
+    def __init__(self, img, rotation, dimension):
+        a_surf = pygame.image.load(os.path.join('Assets',img))
+        self.surface = pygame.transform.rotate(pygame.transform.scale(a_surf,dimension),rotation)
+        # Create a pygame Rect ojbect
+        # Rect(left, top, width, height) -> Rect
+        self.rect = pygame.Rect(0,HEIGHT-100,SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
+        #we do not need to keep track of the position, the rectangle will do that 
+        #self.x = WIDTH/2
+        #self.y = HEIGHT-100
+    
+    def updateX(self, x_diff):
+        self.rect.x += x_diff
+        #self.x += x_diff
+    
+    def updateY(self, y_diff):
+        self.rect.y += y_diff
+
+class Asteroid ():
+    def __init__(self, img, dimension):
+        a_surf = pygame.image.load(os.path.join('Assets',img))
+        self.surface = pygame.transform.scale(a_surf,dimension)
+        self.rect = pygame.Rect(random.randint(0,WIDTH),0,dimension[0],dimension[1])
+       # self.x = self.rect.x
+       # self.y = self.rect.y
+        self.velocity = 5
+    
+    def updateX(self, x_diff):
+        self.rect.x += x_diff
+    
+    def updateY(self, y_diff):
+        self.rect.y += y_diff
+
+#create a class Bullet that will keep all the elements of the Bullets. For now, just a Rect but we might expand later
+class Bullet ():
+    def __init__(self, position):
+        #self.surf = pygame.image.load(os.path.join('Assets',img))            
+        self.rect = pygame.Rect(position[0],position[1],5,20)
+        self.velocity = BUL_VEL 
+
+    def updateY(self, y_diff):
+        self.rect.y += y_diff
+
+    #define a functions that would check if there is a collistion with any asteroids passed in the list
+    #and returns True
+    #name: is_bullet_hit_Ast
+    #input: i_asteroids: a list of Asteroids
+    #def is_bullet_hit_Ast(self, i_asteroids):
+    #    for ast in (i_asteroids):
+    #        if self.rect.colliderect(ast.rect):
+    #            i_asteroids.remove(ast) 
+    #            return True
+    #    return False
+
+
+    
+
+         
+    
+
+#load the image and scale it
+YELLOW_SPACESHIP = SpaceShip('spaceship_yellow.png',180,(SPACESHIP_WIDTH,SPACESHIP_HEIGHT))
+
+
+#define a draw_window function that displays all elements on the screen
+def draw_window():
+    pygame.draw.rect(WIN,BLACK, pygame.Rect(0,0,WIDTH,HEIGHT))
+    WIN.blit(YELLOW_SPACESHIP.surface, (YELLOW_SPACESHIP.rect.x,YELLOW_SPACESHIP.rect.y))
+    for ast in asteroids:
+        WIN.blit(ast.surface, (ast.rect.x, ast.rect.y))
+
+    for bullet in bullets:
+        pygame.draw.rect(WIN,RED,bullet.rect)
+
+# create a function that will detect if any asteroids collides with a ship
+# input
+# asteroids: list of all objects of class Asteroids
+# ship: rectangle of the ship
+# output:
+# True if there is a collision
+# False otherwise
+def is_Ship_Hit(list_asteroids, ship_rect):
+    for ast in list_asteroids:
+        # check if the asteroid hits the ship
+        if ship_rect.colliderect(ast.rect):
+            return True
+    return False
+   
+game_running = True
+clock = pygame.time.Clock()
+
+#create a list of Asteroids
+asteroids=[]
+#create a list of Bullets
+bullets = []
+size = random.randint(30,60)
+asteroids.append(Asteroid('asteroid.png',(size,size)))
+asteroid_spawn_time = 0
+up_frequency_time = 0
+collideTimes = 0
+
+while game_running:
+    clock.tick(FPS)
+    #check for all the events that can occur
+    for event in pygame.event.get():
+        if event.type==pygame.QUIT:
+            game_running = False
+    
+    keys_pressed = pygame.key.get_pressed()
+    if keys_pressed[pygame.K_LEFT]:
+        if YELLOW_SPACESHIP.rect.x > VEL:
+            YELLOW_SPACESHIP.updateX(0-VEL) 
+    if keys_pressed[pygame.K_RIGHT]:
+        if YELLOW_SPACESHIP.rect.x < WIDTH - SPACESHIP_WIDTH - VEL:
+            YELLOW_SPACESHIP.updateX(VEL)
+    if keys_pressed[pygame.K_SPACE]:
+        if len(bullets)<MAX_NUM_BULLETS:
+            bullets.append(Bullet((YELLOW_SPACESHIP.rect.x+YELLOW_SPACESHIP.rect.width/2,YELLOW_SPACESHIP.rect.y)))
+
+    if pygame.time.get_ticks() - up_frequency_time > UP_DIFFICULTY_FREQUENCY:
+        ANDROID_FREQUENCY -= 30
+        up_frequency_time = pygame.time.get_ticks()
+        VEL += 2
+    
+    for ast in asteroids:
+        if (ast.rect.y>HEIGHT):
+            asteroids.remove(ast)
+        else:
+            ast.updateY(ast.velocity)
+    
+    for bul in bullets:
+        if (bul.rect.y<0):
+            bullets.remove (bul)
+            
+        else :
+            bul.updateY(-bul.velocity)
+            for ast in (asteroids):
+               if bul.rect.colliderect(ast.rect):
+                   asteroids.remove(ast)
+                   bullets.remove(bul)
+            
+    
+    if pygame.time.get_ticks()- asteroid_spawn_time  > ANDROID_FREQUENCY:
+       asteroid_spawn_time = pygame.time.get_ticks() 
+       size = random.randint(30,60)
+       asteroids.append(Asteroid('asteroid.png',(size,size)))
+    
+    if is_Ship_Hit(asteroids,YELLOW_SPACESHIP.rect):
+        print("collide"+str(collideTimes))
+        collideTimes+=1
+
+    
+  #  game_running=False
+    
+    
+
+    draw_window()
+    pygame.display.update()
+    
+
+pygame.quit()

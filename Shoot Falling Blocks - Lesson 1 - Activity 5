@@ -1,0 +1,105 @@
+import pygame
+import os
+import random
+
+WIDTH,HEIGHT = 900,900
+WIN = pygame.display.set_mode((WIDTH,HEIGHT))
+WHITE = (255,255,255)
+BLACK = (0,0,0)
+RED = (255,0,0)
+YELLOW = (255,255,0)
+FPS = 60 #frames per second
+VEL = 5
+
+SPACESHIP_WIDTH, SPACESHIP_HEIGHT = 100,100
+
+pygame.display.set_caption("Shoot the blocks")
+
+
+
+class SpaceShip():
+    def __init__(self, img, rotation, dimension):
+        a_surf = pygame.image.load(os.path.join('Assets',img))
+        self.surface = pygame.transform.rotate(pygame.transform.scale(a_surf,dimension),rotation)
+        self.x = WIDTH/2
+        self.y = HEIGHT-100
+    
+    def updateX(self, x_diff):
+        self.x += x_diff
+    
+    def updateY(self, y_diff):
+        self.y += y_diff
+
+class Asteroid ():
+    def __init__(self, img, dimension):
+        a_surf = pygame.image.load(os.path.join('Assets',img))
+        self.surface = pygame.transform.scale(a_surf,dimension)
+        self.x = random.randint(0,WIDTH)
+        self.y = 0
+        self.velocity = 5
+    
+    def updateX(self, x_diff):
+        self.x += x_diff
+    
+    def updateY(self, y_diff):
+        self.y += y_diff
+
+    
+
+#load the image and scale it
+YELLOW_SPACESHIP = SpaceShip('spaceship_yellow.png',180,(SPACESHIP_WIDTH,SPACESHIP_HEIGHT))
+
+
+#define a draw_window function that displays all elements on the screen
+def draw_window():
+    pygame.draw.rect(WIN,BLACK, pygame.Rect(0,0,WIDTH,HEIGHT))
+    WIN.blit(YELLOW_SPACESHIP.surface, (YELLOW_SPACESHIP.x,YELLOW_SPACESHIP.y))
+    for ast in asteroids:
+        WIN.blit(ast.surface, (ast.x, ast.y))
+    
+   
+game_running = True
+clock = pygame.time.Clock()
+
+#create a list of Asteroids
+asteroids=[]
+asteroids.append(Asteroid('asteroid.png',(50,50)))
+asteroid_spawn_time = 0
+
+while game_running:
+    clock.tick(FPS)
+    #check for all the events that can occur
+    for event in pygame.event.get():
+        if event.type==pygame.QUIT:
+            game_running = False
+    
+    keys_pressed = pygame.key.get_pressed()
+    if keys_pressed[pygame.K_LEFT]:
+        if YELLOW_SPACESHIP.x > VEL:
+            YELLOW_SPACESHIP.updateX(0-VEL)
+    if keys_pressed[pygame.K_RIGHT]:
+        if YELLOW_SPACESHIP.x < WIDTH - SPACESHIP_WIDTH - VEL:
+            YELLOW_SPACESHIP.updateX(VEL)
+    
+    for ast in asteroids:
+        if (ast.y>HEIGHT):
+            asteroids.remove(ast)
+        else:
+            ast.updateY(ast.velocity)
+    
+    
+    if pygame.time.get_ticks()- asteroid_spawn_time  > 500:
+       asteroid_spawn_time = pygame.time.get_ticks() 
+       asteroids.append(Asteroid('asteroid.png',(50,50)))
+        
+    
+
+    draw_window()
+    pygame.display.update()
+    
+
+
+    
+    
+
+pygame.quit()

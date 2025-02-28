@@ -67,12 +67,7 @@ class Bullet ():
     #and returns True
     #name: is_bullet_hit_Ast
     #input: i_asteroids: a list of Asteroids
-    def is_bullet_hit_Ast(self, i_asteroids):
-        for ast in (i_asteroids):
-            if self.rect.colliderect(ast.rect):
-                i_asteroids.remove(ast) 
-                return True
-        return False
+    
 
 
     
@@ -152,8 +147,7 @@ while game_running:
     for bul in bullets:
         if (bul.rect.y<0):
             bullets.remove (bul)
-            if (bul.is_bullet_hit_Ast(asteroids)):
-                bullets.remove(bul)
+
         else:
             bul.updateY(-bul.velocity)
     
